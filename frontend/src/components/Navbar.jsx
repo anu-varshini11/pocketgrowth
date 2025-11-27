@@ -5,8 +5,10 @@ export default function Navbar({ user, setUser }) {
   const navigate = useNavigate();
   const [pendingCount, setPendingCount] = useState(0);
 
+  const API_BASE =
+    import.meta.env.VITE_BACKEND_URL || "https://pocketgrowth.onrender.com";
+
   const handleLogout = () => {
-    // clear everything and update app state immediately
     localStorage.clear();
     if (setUser) setUser(null);
     navigate("/login", { replace: true });
@@ -19,27 +21,27 @@ export default function Navbar({ user, setUser }) {
     }
 
     let mounted = true;
+
     const fetchCount = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5000/api/transactions/received/pending/${user.id}`
+          `${API_BASE}/api/transactions/received/pending/${user.id}`
         );
         const data = await res.json();
         if (mounted && res.ok) setPendingCount(data.transactions.length || 0);
-      } catch (err) {
-        // ignore
-      }
+      } catch {}
     };
 
     fetchCount();
-    const interval = setInterval(fetchCount, 4000);
+    const timer = setInterval(fetchCount, 4000);
+
     return () => {
       mounted = false;
-      clearInterval(interval);
+      clearInterval(timer);
     };
   }, [user]);
 
-  // When logged out — centered single logo
+  // Logged-out Navbar
   if (!user) {
     return (
       <nav
@@ -48,18 +50,18 @@ export default function Navbar({ user, setUser }) {
           color: "white",
           display: "flex",
           justifyContent: "center",
-          alignItems: "center",
           padding: "1rem 0",
           borderBottom: "2px solid #334155",
-          fontFamily: "Inter, sans-serif",
         }}
       >
-        <h2 style={{ fontWeight: 700, fontSize: "1.4rem", color: "#22c55e" }}>💰 PocketGrowth</h2>
+        <h2 style={{ fontWeight: 700, fontSize: "1.4rem", color: "#22c55e" }}>
+          💰 PocketGrowth
+        </h2>
       </nav>
     );
   }
 
-  // When logged in — full navbar with links
+  // Logged-in Navbar
   return (
     <nav
       style={{
@@ -70,15 +72,19 @@ export default function Navbar({ user, setUser }) {
         justifyContent: "space-between",
         alignItems: "center",
         borderBottom: "2px solid #334155",
-        fontFamily: "Inter, sans-serif",
       }}
     >
-      <h1 style={{ fontWeight: 700, fontSize: "1.6rem", color: "#22c55e" }}>💰 PocketGrowth</h1>
+      <h1 style={{ fontWeight: 700, fontSize: "1.6rem", color: "#22c55e" }}>
+        💰 PocketGrowth
+      </h1>
 
       <div style={{ display: "flex", gap: "1.2rem", alignItems: "center" }}>
         <NavLink to="/dashboard" label="Dashboard" />
         <NavLink to="/send" label="Send Money" />
-        <NavLink to="/receive" label={`Received ${pendingCount > 0 ? `(${pendingCount})` : ""}`} />
+        <NavLink
+          to="/receive"
+          label={`Received ${pendingCount > 0 ? `(${pendingCount})` : ""}`}
+        />
         <NavLink to="/transactions" label="Transactions" />
         <NavLink to="/investments" label="Investments" />
         <NavLink to="/profile" label="Profile" />
@@ -90,9 +96,9 @@ export default function Navbar({ user, setUser }) {
             padding: "8px 14px",
             borderRadius: "6px",
             border: "none",
-            fontWeight: 500,
             cursor: "pointer",
             color: "white",
+            fontWeight: 500,
           }}
         >
           Logout
@@ -110,7 +116,6 @@ function NavLink({ to, label }) {
         textDecoration: "none",
         color: "white",
         fontWeight: 500,
-        fontSize: "1rem",
       }}
     >
       {label}

@@ -5,15 +5,20 @@ export default function InvestmentForm({ user, refreshUserData }) {
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
 
+  const API_BASE =
+    import.meta.env.VITE_BACKEND_URL || "https://pocketgrowth.onrender.com";
+
   const handleInvest = async (e) => {
     e.preventDefault();
     setMessage("⏳ Processing investment...");
+
     try {
-      const res = await fetch("http://localhost:5000/api/investments/add", {
+      const res = await fetch(`${API_BASE}/api/investments/add`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id, type, amount }),
       });
+
       const data = await res.json();
 
       if (res.ok) {
@@ -42,14 +47,16 @@ export default function InvestmentForm({ user, refreshUserData }) {
           <option value="crypto">Crypto</option>
           <option value="mutualfunds">Mutual Funds</option>
         </select>
+
         <input
           type="number"
-          placeholder="Amount"
+          placeholder="Amount (₹)"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           required
           style={{ padding: "8px", marginRight: "10px" }}
         />
+
         <button
           type="submit"
           style={{

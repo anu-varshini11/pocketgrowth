@@ -5,11 +5,15 @@ export default function SendMoneyForm({ user, refreshUserData }) {
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
 
+  const API_BASE =
+    import.meta.env.VITE_BACKEND_URL || "https://pocketgrowth.onrender.com";
+
   const handleSend = async (e) => {
     e.preventDefault();
     setMessage("⏳ Sending money...");
+
     try {
-      const res = await fetch("http://localhost:5000/api/transactions/send", {
+      const res = await fetch(`${API_BASE}/api/transactions/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -18,7 +22,9 @@ export default function SendMoneyForm({ user, refreshUserData }) {
           amount,
         }),
       });
+
       const data = await res.json();
+
       if (res.ok) {
         setMessage(data.message);
         setAmount("");
@@ -35,23 +41,26 @@ export default function SendMoneyForm({ user, refreshUserData }) {
   return (
     <div style={{ marginTop: "2rem" }}>
       <h3>Send Money</h3>
+
       <form onSubmit={handleSend}>
         <input
           type="email"
-          placeholder="Recipient's Email"
+          placeholder="Recipient Email"
           value={toEmail}
           onChange={(e) => setToEmail(e.target.value)}
           required
           style={{ padding: "8px", marginRight: "10px" }}
         />
+
         <input
           type="number"
-          placeholder="Amount"
+          placeholder="Amount (₹)"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           required
           style={{ padding: "8px", marginRight: "10px" }}
         />
+
         <button
           type="submit"
           style={{
@@ -66,6 +75,7 @@ export default function SendMoneyForm({ user, refreshUserData }) {
           Send
         </button>
       </form>
+
       <p>{message}</p>
     </div>
   );
