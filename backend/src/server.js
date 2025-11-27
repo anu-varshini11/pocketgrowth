@@ -28,7 +28,7 @@ app.use("/api/unlock", unlockRoutes);
 app.use("/api/investments", investmentRoutes);
 app.use("/api/users", require("./routes/users"));
 app.use("/api/profile", require("./routes/profile"));
-app.use("/api/profile", require("./routes/profile"));
+
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 
 

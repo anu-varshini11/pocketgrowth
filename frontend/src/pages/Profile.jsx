@@ -1,76 +1,228 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
-  const user = JSON.parse(localStorage.getItem("user"));
-  const [confirming, setConfirming] = useState(false);
+  const stored = JSON.parse(localStorage.getItem("user"));
+  const [form, setForm] = useState({
+    name: stored.name,
+    email: stored.email,
+    savingsPercent: stored.savingsPercent || 20,
+  });
+
+  const [passwordForm, setPasswordForm] = useState({
+    oldPassword: "",
+    newPassword: "",
+  });
+
   const [message, setMessage] = useState("");
-  const navigate = useNavigate();
+  const [passMessage, setPassMessage] = useState("");
 
-  const API_BASE = import.meta.env.VITE_BACKEND_URL || "https://pocketgrowth.onrender.com";
+  // ------------------------------
+  // Update profile info
+  // ------------------------------
+  const updateInfo = async (e) => {
+    e.preventDefault();
+    setMessage("Updating...");
 
-  const handleDelete = async () => {
-    setMessage("⏳ Deleting account...");
-    try {
-      const res = await fetch(`${API_BASE}/api/auth/user/${user.id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-      });
-      const data = await res.json();
-      if (res.ok) {
-        // clear local state and redirect to login
-        localStorage.clear();
-        setMessage("✅ Account deleted. Redirecting...");
-        setTimeout(() => {
-          navigate("/login", { replace: true });
-        }, 800);
-      } else {
-        setMessage(`❌ ${data.error || "Delete failed"}`);
-      }
-    } catch {
-      setMessage("❌ Network error");
+    const res = await fetch("https://pocketgrowth.onrender.com/api/profile/update-info", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: stored.id, ...form }),
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      localStorage.setItem("user", JSON.stringify(data.user));
+      setMessage("✔ Profile updated!");
+    } else {
+      setMessage("❌ " + data.error);
+    }
+  };
+
+  // ------------------------------
+  // Update savings %
+  // ------------------------------
+  const updatePercent = async (e) => {
+    e.preventDefault();
+    const res = await fetch("https://pocketgrowth.onrender.com/api/profile/update-savings-percent", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: stored.id, percent: form.savingsPercent }),
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      setMessage("✔ Savings percentage updated");
+    } else {
+      setMessage("❌ " + data.error);
+    }
+  };
+
+  // ------------------------------
+  // Update password
+  // ------------------------------
+  const updatePassword = async (e) => {
+    e.preventDefault();
+    setPassMessage("Updating...");
+
+    const res = await fetch("https://pocketgrowth.onrender.com/api/profile/update-password", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: stored.id,
+        ...passwordForm,
+      }),
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      setPassMessage("✔ Password updated!");
+      setPasswordForm({ oldPassword: "", newPassword: "" });
+    } else {
+      setPassMessage("❌ " + data.error);
+    }
+  };
+
+  // ------------------------------
+  // Delete account
+  // ------------------------------
+  const deleteAccount = async () => {
+    if (!window.confirm("Are you sure? This cannot be undone.")) return;
+
+    const res = await fetch(
+      `https://pocketgrowth.onrender.com/api/profile/delete/${stored.id}`,
+      { method: "DELETE" }
+    );
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert("Account deleted.");
+      localStorage.clear();
+      window.location.href = "/login";
+    } else {
+      alert("Error: " + data.error);
     }
   };
 
   return (
-    <div style={{ padding: "2rem", maxWidth: "800px", margin: "auto" }}>
-      <h2>Profile</h2>
-      <p><strong>Name:</strong> {user.name}</p>
-      <p><strong>Email:</strong> {user.email}</p>
-      <p><strong>Available:</strong> ₹{(user.availableBalance ?? 0).toFixed(2)}</p>
-      <p><strong>Locked:</strong> ₹{(user.lockedBalance ?? 0).toFixed(2)}</p>
+    <div style={{ padding: "2rem", maxWidth: "600px", margin: "auto" }}>
+      <h2>👤 Profile Settings</h2>
 
+      {/* Update name & email */}
+      <form onSubmit={updateInfo} style={{ marginTop: "1rem" }}>
+        <h3>Update Profile Info</h3>
+
+        <input
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          placeholder="Full Name"
+          style={{ width: "100%", margin: "8px 0", padding: "10px" }}
+        />
+
+        <input
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          placeholder="Email"
+          style={{ width: "100%", margin: "8px 0", padding: "10px" }}
+        />
+
+        <button
+          style={{
+            padding: "10px",
+            background: "#22c55e",
+            color: "white",
+            borderRadius: "6px",
+            border: "none",
+          }}
+        >
+          Save Changes
+        </button>
+
+        <p style={{ marginTop: "10px", color: "#64748b" }}>{message}</p>
+      </form>
+
+      {/* Update Savings % */}
+      <form onSubmit={updatePercent} style={{ marginTop: "2rem" }}>
+        <h3>Savings Percentage (%)</h3>
+
+        <input
+          type="number"
+          min="0"
+          max="100"
+          value={form.savingsPercent}
+          onChange={(e) => setForm({ ...form, savingsPercent: e.target.value })}
+          style={{ width: "100%", margin: "8px 0", padding: "10px" }}
+        />
+
+        <button
+          style={{
+            padding: "10px",
+            background: "#0ea5e9",
+            color: "white",
+            borderRadius: "6px",
+            border: "none",
+          }}
+        >
+          Update
+        </button>
+      </form>
+
+      {/* Password Change */}
+      <form onSubmit={updatePassword} style={{ marginTop: "2rem" }}>
+        <h3>Change Password</h3>
+
+        <input
+          type="password"
+          placeholder="Old Password"
+          value={passwordForm.oldPassword}
+          onChange={(e) =>
+            setPasswordForm({ ...passwordForm, oldPassword: e.target.value })
+          }
+          style={{ width: "100%", margin: "8px 0", padding: "10px" }}
+        />
+
+        <input
+          type="password"
+          placeholder="New Password"
+          value={passwordForm.newPassword}
+          onChange={(e) =>
+            setPasswordForm({ ...passwordForm, newPassword: e.target.value })
+          }
+          style={{ width: "100%", margin: "8px 0", padding: "10px" }}
+        />
+
+        <button
+          style={{
+            padding: "10px",
+            background: "#f97316",
+            color: "white",
+            borderRadius: "6px",
+            border: "none",
+          }}
+        >
+          Update Password
+        </button>
+
+        <p style={{ marginTop: "10px", color: "#64748b" }}>{passMessage}</p>
+      </form>
+
+      {/* Delete Account */}
       <div style={{ marginTop: "2rem" }}>
         <button
-          onClick={() => setConfirming(true)}
-          style={{ background: "#ef4444", color: "white", padding: "10px 14px", border: "none", borderRadius: "6px", cursor: "pointer" }}
+          onClick={deleteAccount}
+          style={{
+            padding: "10px",
+            background: "#ef4444",
+            color: "white",
+            borderRadius: "6px",
+            border: "none",
+            width: "100%",
+            fontWeight: 600,
+          }}
         >
           Delete Account
         </button>
       </div>
-
-      {confirming && (
-        <div style={{
-          position: "fixed",
-          inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "rgba(0,0,0,0.5)"
-        }}>
-          <div style={{ background: "white", padding: "20px", borderRadius: "8px", width: "420px" }}>
-            <h3>Are you sure?</h3>
-            <p>Deleting your account is permanent. Your transaction history will remain (for audit), but your profile will be removed.</p>
-            <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", marginTop: "12px" }}>
-              <button onClick={() => setConfirming(false)} style={{ padding: "8px 12px", borderRadius: "6px" }}>Cancel</button>
-              <button onClick={handleDelete} style={{ padding: "8px 12px", background: "#ef4444", color: "white", borderRadius: "6px" }}>
-                Yes, delete
-              </button>
-            </div>
-            <p style={{ marginTop: "10px" }}>{message}</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
