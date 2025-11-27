@@ -17,10 +17,10 @@ export default function UnlockForm({ user, refreshUserData }) {
       const data = await res.json();
 
       if (res.ok) {
-        setMessage(data.message);
+        setMessage(data.message || "✅ Unlocked");
         setAmount("");
         setReason("");
-        refreshUserData();
+        if (refreshUserData) await refreshUserData();
       } else {
         setMessage(`❌ ${data.error}`);
       }
@@ -35,7 +35,7 @@ export default function UnlockForm({ user, refreshUserData }) {
       <form onSubmit={handleUnlock}>
         <input
           type="number"
-          placeholder="Amount"
+          placeholder="Amount (₹)"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           required

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import AllowanceForm from "../components/AllowanceForm";
 import UnlockForm from "../components/UnlockForm";
+import { formatINR } from "../utils/currency";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -81,7 +82,7 @@ export default function Dashboard() {
           >
             <p style={{ fontSize: ".9rem", color: "#166534" }}>Available Balance</p>
             <h2 style={{ marginTop: ".3rem", fontSize: "1.4rem", color: "#15803d" }}>
-              ${(user.availableBalance ?? 0).toFixed(2)}
+              {formatINR(user.availableBalance ?? 0)}
             </h2>
           </div>
 
@@ -95,7 +96,7 @@ export default function Dashboard() {
           >
             <p style={{ fontSize: ".9rem", color: "#c2410c" }}>Locked Savings</p>
             <h2 style={{ marginTop: ".3rem", fontSize: "1.4rem", color: "#ea580c" }}>
-              ${(user.lockedBalance ?? 0).toFixed(2)}
+              {formatINR(user.lockedBalance ?? 0)}
             </h2>
           </div>
         </div>

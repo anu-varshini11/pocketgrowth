@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatINR } from "../utils/currency";
 
 export default function SendMoney() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -31,7 +32,7 @@ export default function SendMoney() {
         // refresh stored user data for sender
         const refreshed = await fetch(`http://localhost:5000/api/auth/user/${user.id}`);
         const updatedUser = await refreshed.json();
-        localStorage.setItem("user", JSON.stringify(updatedUser));
+        if (refreshed.ok) localStorage.setItem("user", JSON.stringify(updatedUser));
       } else {
         setMessage(`❌ ${data.error || "Failed to send money"}`);
       }
@@ -54,7 +55,7 @@ export default function SendMoney() {
         />
         <input
           type="number"
-          placeholder="Amount"
+          placeholder="Amount (₹)"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           required

@@ -24,7 +24,7 @@ router.post("/", async (req, res) => {
     await user.save();
 
     res.json({
-      message: `✅ Unlocked $${numAmount} for "${reason || "general use"}".`,
+      message: `✅ Unlocked ₹${numAmount} for "${reason || "general use"}".`,
       availableBalance: user.availableBalance,
       lockedBalance: user.lockedBalance,
     });

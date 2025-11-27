@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatINR } from "../utils/currency";
 
 export default function Transactions() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -41,7 +42,7 @@ export default function Transactions() {
               }}
             >
               <p>
-                <strong>{tx.type.toUpperCase()}</strong> — ${tx.amount}
+                <strong>{tx.type.toUpperCase()}</strong> — {formatINR(tx.amount)}
               </p>
 
               <p style={{ fontSize: "0.9rem", color: "#64748b" }}>

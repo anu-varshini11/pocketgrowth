@@ -8,6 +8,7 @@ const transactionRoutes = require("./routes/transactions");
 const unlockRoutes = require("./routes/unlock");
 const investmentRoutes = require("./routes/investments");
 
+
 const app = express();
 
 // connect to DB
@@ -21,6 +22,9 @@ app.use("/api/transactions", require("./routes/transactions"));
 app.use("/api/allowance", allowanceRoutes);
 app.use("/api/unlock", unlockRoutes);
 app.use("/api/investments", investmentRoutes);
+app.use("/api/users", require("./routes/users"));
+app.use("/api/profile", require("./routes/profile"));
+app.use("/api/profile", require("./routes/profile"));
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 
 

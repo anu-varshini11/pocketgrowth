@@ -1,46 +1,49 @@
 const express = require("express");
 const Investment = require("../models/Investment");
 const User = require("../models/User");
+const Transaction = require("../models/Transaction"); // optional for history
 
 const router = express.Router();
 
-// ✅ POST /api/investments/add
+// POST /api/investments/add
 router.post("/add", async (req, res) => {
   try {
     const { userId, type, amount, returns } = req.body;
-
-    if (!userId || !type || !amount)
-      return res.status(400).json({ error: "Missing required fields" });
+    const amt = parseFloat(amount);
+    if (!userId || !type || isNaN(amt) || amt <= 0) {
+      return res.status(400).json({ error: "Missing or invalid fields" });
+    }
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    const investAmount = parseFloat(amount);
-
-    // ✅ Check for sufficient balance
-    if (user.availableBalance < investAmount) {
-      return res.status(400).json({ error: "Insufficient balance to invest" });
+    // Ensure user has enough lockedBalance
+    if ((user.lockedBalance || 0) < amt) {
+      return res.status(400).json({ error: "Insufficient locked balance. Invest from locked savings only." });
     }
 
-    // ✅ Deduct the invested amount from user's available balance
-    user.availableBalance -= investAmount;
+    // Deduct from locked balance
+    user.lockedBalance -= amt;
     await user.save();
 
-    // ✅ Create a new investment entry
+    // Create investment
     const newInvestment = new Investment({
       userId,
       type,
-      amount: investAmount,
-      returns: returns || 0, // returns remain 0 for now
-      createdAt: new Date(),
+      amount: amt,
+      returns: returns || 0,
     });
-
     await newInvestment.save();
 
+    // optional: add transaction history record for invest
+    // await Transaction.create({ type: "invest", originalAmount: amt, amount: amt, fromUserId: userId, fromUserName: user.name });
+
+    // Return updated balances too (important so frontend can refresh localStorage)
     res.status(201).json({
-      message: `✅ Invested $${investAmount} in ${type}`,
+      message: `✅ Investment of ₹${amt} created (from locked savings)`,
       investment: newInvestment,
-      newBalance: user.availableBalance,
+      availableBalance: user.availableBalance,
+      lockedBalance: user.lockedBalance,
     });
   } catch (error) {
     console.error("Add investment error:", error);
@@ -48,16 +51,14 @@ router.post("/add", async (req, res) => {
   }
 });
 
-// ✅ GET /api/investments/:userId
+// existing GET /api/investments/:userId route stays
 router.get("/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-
     const investments = await Investment.find({ userId }).sort({ createdAt: -1 });
 
-    // Calculate totals
-    const totalInvested = investments.reduce((sum, inv) => sum + inv.amount, 0);
-    const totalReturns = investments.reduce((sum, inv) => sum + inv.returns, 0);
+    const totalInvested = investments.reduce((s, inv) => s + inv.amount, 0);
+    const totalReturns = investments.reduce((s, inv) => s + inv.returns, 0);
     const netWorth = totalInvested + totalReturns;
 
     res.json({
@@ -71,26 +72,5 @@ router.get("/:userId", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch investments" });
   }
 });
-
-
-router.patch("/grow", async (req, res) => {
-  try {
-    const investments = await Investment.find();
-
-    for (const inv of investments) {
-      // Simulate a random return between -2% and +5%
-      const growthRate = Math.random() * 0.07 - 0.02;
-      const gain = inv.amount * growthRate;
-      inv.returns = (inv.returns || 0) + gain;
-      await inv.save();
-    }
-
-    res.json({ message: "📈 Investments updated with simulated returns" });
-  } catch (error) {
-    console.error("Growth error:", error);
-    res.status(500).json({ error: "Failed to update investments" });
-  }
-});
-
 
 module.exports = router;

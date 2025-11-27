@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
-export default function Login() {
+export default function Login({ setUser }) {
   const [form, setForm] = useState({ email: "", password: "" });
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,9 +22,12 @@ export default function Login() {
       const data = await res.json();
 
       if (res.ok) {
+        // persist and lift state immediately
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
+        if (setUser) setUser(data.user);
 
+        // redirect right away
         navigate("/dashboard", { replace: true });
       } else {
         setMessage(`❌ ${data.error || "Login failed"}`);

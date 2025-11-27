@@ -1,62 +1,194 @@
 import { useEffect, useState } from "react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from "recharts";
+import { formatINR } from "../utils/currency";
 
 export default function Investments() {
-  const [user] = useState(JSON.parse(localStorage.getItem("user")));
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
   const [investments, setInvestments] = useState([]);
-  const [totals, setTotals] = useState({ totalInvested: 0, totalReturns: 0, netWorth: 0 });
+  const [totals, setTotals] = useState({
+    totalInvested: 0,
+    totalReturns: 0,
+    netWorth: 0,
+  });
+
+  const [type, setType] = useState("Stocks");
+  const [amount, setAmount] = useState("");
+  const [message, setMessage] = useState("");
+
+  const COLORS = ["#22c55e", "#0ea5e9"];
 
   useEffect(() => {
-    if (user) fetchInvestments();
-  }, [user]);
+    fetchInvestments();
+  }, []);
 
   const fetchInvestments = async () => {
-    const res = await fetch(`http://localhost:5000/api/investments/${user.id}`);
-    const data = await res.json();
-    setInvestments(data.investments);
-    setTotals({
-      totalInvested: data.totalInvested,
-      totalReturns: data.totalReturns,
-      netWorth: data.netWorth,
-    });
+    if (!user) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/investments/${user.id}`);
+      const data = await res.json();
+
+      if (res.ok) {
+        setInvestments(data.investments);
+        setTotals({
+          totalInvested: data.totalInvested,
+          totalReturns: data.totalReturns,
+          netWorth: data.netWorth,
+        });
+      }
+    } catch (err) {
+      console.error("Fetch investments error:", err);
+    }
   };
 
+  const addInvestment = async (e) => {
+    e.preventDefault();
+    setMessage("Adding...");
+
+    if (!amount || isNaN(amount) || Number(amount) <= 0) {
+      setMessage("❌ Enter a valid amount");
+      return;
+    }
+    if (Number(amount) > (user.lockedBalance || 0)) {
+      setMessage("❌ Not enough locked savings to invest");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:5000/api/investments/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          type,
+          amount,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setMessage("✔ Investment added!");
+        setAmount("");
+        // refresh investments and user balances
+        await fetchInvestments();
+
+        // refresh user data and local state
+        const refreshed = await fetch(`http://localhost:5000/api/auth/user/${user.id}`);
+        const updatedUser = await refreshed.json();
+        if (refreshed.ok) {
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+          setUser(updatedUser);
+        }
+      } else {
+        setMessage(`❌ ${data.error}`);
+      }
+    } catch (err) {
+      setMessage("❌ Network error");
+    }
+  };
+
+  const pieData = [
+    { name: "Invested", value: totals.totalInvested },
+    { name: "Returns", value: totals.totalReturns },
+  ];
+
+  const lineData = investments.map((inv) => ({
+    date: new Date(inv.createdAt).toLocaleDateString(),
+    netWorth: inv.amount + inv.returns,
+  }));
+
   return (
-    <div style={{ padding: "2rem" }}>
-      <h2>📈 Investments</h2>
-      <p>Total Invested: ${totals.totalInvested}</p>
-      <p>Total Returns: ${totals.totalReturns}</p>
-      <p>Net Worth: ${totals.netWorth}</p>
+    <div style={{ padding: "2rem", maxWidth: "1000px", margin: "auto" }}>
+      <h2 style={{ marginBottom: "1.5rem" }}>📈 Investments Dashboard</h2>
 
-      {investments.length > 0 ? (
-        <ul style={{ marginTop: "10px" }}>
-          {investments.map((inv) => (
-            <li key={inv._id}>
-              {inv.type.toUpperCase()} — ${inv.amount} (+${inv.returns} returns)
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>No investments yet.</p>
-      )}
+      <div style={{ display: "flex", gap: "1rem", marginBottom: "2rem", flexWrap: "wrap" }}>
+        <Card title="Total Invested" value={formatINR(totals.totalInvested)} />
+        <Card title="Total Returns" value={formatINR(totals.totalReturns)} />
+        <Card title="Net Worth" value={formatINR(totals.netWorth)} />
+      </div>
 
-      <button
-        onClick={async () => {
-          await fetch("http://localhost:5000/api/investments/grow", { method: "PATCH" });
-          fetchInvestments();
-          alert("📈 Simulated growth!");
-        }}
-        style={{
-          marginTop: "10px",
-          background: "#22c55e",
-          color: "white",
-          border: "none",
-          padding: "8px 12px",
-          borderRadius: "6px",
-          cursor: "pointer",
-        }}
-      >
-        Simulate Market Growth
-      </button>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "2rem" }}>
+        <div style={{ height: "320px", background: "white", padding: "1rem", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+          <h3>Investment Breakdown</h3>
+          {/* explicit height ensures ResponsiveContainer has a proper parent size */}
+          <div style={{ width: "100%", height: 240 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={90} label>
+                  {pieData.map((entry, index) => (
+                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div style={{ height: "320px", background: "white", padding: "1rem", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+          <h3>Net Worth Growth</h3>
+          <div style={{ width: "100%", height: 240 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={lineData}>
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="netWorth" stroke="#22c55e" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ padding: "1.5rem", background: "#f8fafc", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+        <h3>Add New Investment</h3>
+
+        <p style={{ marginTop: "0.5rem", marginBottom: "1rem", color: "#64748b" }}>
+          Locked Savings Available:&nbsp;
+          <strong style={{ color: "#22c55e" }}>{formatINR(user.lockedBalance ?? 0)}</strong>
+        </p>
+
+        <form onSubmit={addInvestment} style={{ marginTop: "1rem" }}>
+          <div style={{ marginBottom: "1rem" }}>
+            <label>Type:</label>
+            <select value={type} onChange={(e) => setType(e.target.value)} style={{ marginLeft: "10px", padding: "6px", borderRadius: "6px", border: "1px solid #94a3b8" }}>
+              <option>Stocks</option>
+              <option>Crypto</option>
+              <option>SIP</option>
+              <option>Mutual Fund</option>
+              <option>Fixed Deposit</option>
+            </select>
+          </div>
+
+          <input type="number" placeholder="Amount (₹)" value={amount} onChange={(e) => setAmount(e.target.value)} required style={{ padding: "10px", width: "200px", borderRadius: "6px", border: "1px solid #94a3b8" }} />
+
+          <button type="submit" style={{ marginLeft: "10px", padding: "10px", background: "#22c55e", color: "white", borderRadius: "6px", border: "none", cursor: "pointer" }}>
+            Add
+          </button>
+        </form>
+
+        {message && <p style={{ marginTop: "10px" }}>{message}</p>}
+      </div>
+    </div>
+  );
+}
+
+function Card({ title, value }) {
+  return (
+    <div style={{ background: "white", padding: "1rem 1.5rem", borderRadius: "10px", flex: "1", border: "1px solid #e2e8f0", minWidth: "200px", boxShadow: "0 3px 8px rgba(0,0,0,0.05)" }}>
+      <p style={{ color: "#64748b", marginBottom: ".3rem" }}>{title}</p>
+      <h2 style={{ fontSize: "1.6rem", color: "#1e293b" }}>{value}</h2>
     </div>
   );
 }

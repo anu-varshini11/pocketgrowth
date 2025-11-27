@@ -56,7 +56,7 @@ router.post("/send", async (req, res) => {
     await receiveTx.save();
 
     res.json({
-      message: `✅ Sent $${sendAmount} to ${receiver.name}. Recipient will process the incoming funds.`,
+      message: `✅ Sent ₹${sendAmount} to ${receiver.name}. Recipient will process the incoming funds.`,
       senderBalance: sender.availableBalance,
       sendTxId: sendTx._id,
       receiveTxId: receiveTx._id,
