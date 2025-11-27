@@ -53,17 +53,7 @@ router.get("/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
 
-    let investments = await Investment.find({ userId }).sort({ createdAt: -1 });
-
-    // 🔥 AUTO-GROWTH APPLIED HERE
-    for (let inv of investments) {
-      const growth = inv.amount * DAILY_GROWTH_RATE;
-      inv.returns += growth;
-      await inv.save();
-    }
-
-    // Fetch again with updated values
-    investments = await Investment.find({ userId }).sort({ createdAt: -1 });
+    const investments = await Investment.find({ userId }).sort({ createdAt: -1 });
 
     const totalInvested = investments.reduce((s, inv) => s + inv.amount, 0);
     const totalReturns = investments.reduce((s, inv) => s + inv.returns, 0);
@@ -80,5 +70,6 @@ router.get("/:userId", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch investments" });
   }
 });
+
 
 module.exports = router;

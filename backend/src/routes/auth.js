@@ -52,6 +52,7 @@ router.post("/signup", async (req, res) => {
 });
 
 // ✅ POST /api/auth/login
+// POST /api/auth/login
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -61,6 +62,16 @@ router.post("/login", async (req, res) => {
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) return res.status(400).json({ error: "Invalid password" });
+
+    // Auto-growth only on login
+    const investments = await Investment.find({ userId: user._id });
+    const DAILY_GROWTH_RATE = 0.002;
+
+    for (let inv of investments) {
+      const growth = inv.amount * DAILY_GROWTH_RATE;
+      inv.returns += growth;
+      await inv.save();
+    }
 
     const token = jwt.sign(
       { id: user._id },
@@ -84,6 +95,7 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ error: "Login failed" });
   }
 });
+
 
 // ✅ GET /api/auth/user/:id – refresh dashboard balances
 router.get("/user/:id", async (req, res) => {
