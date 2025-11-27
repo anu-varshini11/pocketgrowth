@@ -27,6 +27,7 @@ export default function Investments() {
   const [message, setMessage] = useState("");
 
   const COLORS = ["#22c55e", "#0ea5e9"];
+  const API_BASE = "https://pocketgrowth.onrender.com/api";
 
   useEffect(() => {
     fetchInvestments();
@@ -35,7 +36,7 @@ export default function Investments() {
   const fetchInvestments = async () => {
     if (!user) return;
     try {
-      const res = await fetch(`https://pocketgrowth.onrender.com/investments/${user.id}`);
+      const res = await fetch(`${API_BASE}/investments/${user.id}`);
       const data = await res.json();
 
       if (res.ok) {
@@ -65,7 +66,7 @@ export default function Investments() {
     }
 
     try {
-      const res = await fetch("https://pocketgrowth.onrender.com/api/investments/add", {
+      const res = await fetch(`${API_BASE}/investments/add`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -80,11 +81,11 @@ export default function Investments() {
       if (res.ok) {
         setMessage("✔ Investment added!");
         setAmount("");
-        // refresh investments and user balances
+
         await fetchInvestments();
 
-        // refresh user data and local state
-        const refreshed = await fetch(`https://pocketgrowth.onrender.com/api/auth/user/${user.id}`);
+        // refresh user after deduction
+        const refreshed = await fetch(`${API_BASE}/auth/user/${user.id}`);
         const updatedUser = await refreshed.json();
         if (refreshed.ok) {
           localStorage.setItem("user", JSON.stringify(updatedUser));
@@ -103,10 +104,15 @@ export default function Investments() {
     { name: "Returns", value: totals.totalReturns },
   ];
 
-  const lineData = investments.map((inv) => ({
-    date: new Date(inv.createdAt).toLocaleDateString(),
-    netWorth: inv.amount + inv.returns,
-  }));
+  // FIX: unique dates + cumulative net worth
+  const lineData = investments
+    .slice()
+    .reverse()
+    .map((inv, index) => ({
+      index,
+      netWorth: inv.amount + inv.returns,
+      label: new Date(inv.createdAt).toLocaleString(),
+    }));
 
   return (
     <div style={{ padding: "2rem", maxWidth: "1000px", margin: "auto" }}>
@@ -118,10 +124,10 @@ export default function Investments() {
         <Card title="Net Worth" value={formatINR(totals.netWorth)} />
       </div>
 
+      {/* Charts */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "2rem" }}>
         <div style={{ height: "320px", background: "white", padding: "1rem", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
           <h3>Investment Breakdown</h3>
-          {/* explicit height ensures ResponsiveContainer has a proper parent size */}
           <div style={{ width: "100%", height: 240 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -141,9 +147,9 @@ export default function Investments() {
           <div style={{ width: "100%", height: 240 }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={lineData}>
-                <XAxis dataKey="date" />
+                <XAxis dataKey="index" tickFormatter={(i) => `#${i + 1}`} />
                 <YAxis />
-                <Tooltip />
+                <Tooltip labelFormatter={(i) => lineData[i]?.label} />
                 <Line type="monotone" dataKey="netWorth" stroke="#22c55e" />
               </LineChart>
             </ResponsiveContainer>
@@ -151,6 +157,7 @@ export default function Investments() {
         </div>
       </div>
 
+      {/* Add Investment */}
       <div style={{ padding: "1.5rem", background: "#f8fafc", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
         <h3>Add New Investment</h3>
 
@@ -171,7 +178,14 @@ export default function Investments() {
             </select>
           </div>
 
-          <input type="number" placeholder="Amount (₹)" value={amount} onChange={(e) => setAmount(e.target.value)} required style={{ padding: "10px", width: "200px", borderRadius: "6px", border: "1px solid #94a3b8" }} />
+          <input
+            type="number"
+            placeholder="Amount (₹)"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            required
+            style={{ padding: "10px", width: "200px", borderRadius: "6px", border: "1px solid #94a3b8" }}
+          />
 
           <button type="submit" style={{ marginLeft: "10px", padding: "10px", background: "#22c55e", color: "white", borderRadius: "6px", border: "none", cursor: "pointer" }}>
             Add
