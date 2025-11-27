@@ -7,6 +7,10 @@ const authRoutes = require("./routes/auth");
 const transactionRoutes = require("./routes/transactions");
 const unlockRoutes = require("./routes/unlock");
 const investmentRoutes = require("./routes/investments");
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://pocketgrowth-nrqtatam8-anu-varshini11s-projects.vercel.app"
+];
 
 
 const app = express();
@@ -29,7 +33,7 @@ app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 
 
 app.use(cors({
-  origin: "*",  // we'll update this after frontend deploy
+  origin: allowedOrigins,
   methods: "GET,POST,PUT,PATCH,DELETE",
   credentials: true
 }));
