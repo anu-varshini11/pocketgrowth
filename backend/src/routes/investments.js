@@ -10,6 +10,7 @@ router.post("/add", async (req, res) => {
   try {
     const { userId, type, amount, returns } = req.body;
     const amt = parseFloat(amount);
+
     if (!userId || !type || isNaN(amt) || amt <= 0) {
       return res.status(400).json({ error: "Missing or invalid fields" });
     }
@@ -17,16 +18,18 @@ router.post("/add", async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    // Ensure user has enough lockedBalance
+    // Check locked balance
     if ((user.lockedBalance || 0) < amt) {
-      return res.status(400).json({ error: "Insufficient locked balance. Invest from locked savings only." });
+      return res.status(400).json({
+        error: "Insufficient locked balance. Invest from locked savings only.",
+      });
     }
 
-    // Deduct from locked balance
+    // Deduct amount from locked savings
     user.lockedBalance -= amt;
     await user.save();
 
-    // Create investment
+    // Create investment entry
     const newInvestment = new Investment({
       userId,
       type,
@@ -35,19 +38,21 @@ router.post("/add", async (req, res) => {
     });
     await newInvestment.save();
 
-    // Add transaction record for investment
+    // 🔥 LOG TRANSACTION (this was missing!)
     await Transaction.create({
       type: "invest",
       originalAmount: amt,
       amount: amt,
       fromUserId: user._id,
       fromUserName: user.name,
-      note: `Invested ₹${amt} into ${type}`,
+      toUserId: user._id,
+      toUserName: user.name,
+      note: `Invested in ${type}`,
       isProcessed: true,
     });
 
     res.status(201).json({
-      message: `✅ Investment of ₹${amt} created (from locked savings)`,
+      message: `Investment of ₹${amt} created (from locked savings)`,
       investment: newInvestment,
       availableBalance: user.availableBalance,
       lockedBalance: user.lockedBalance,
