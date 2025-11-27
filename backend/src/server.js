@@ -28,6 +28,16 @@ app.use("/api/profile", require("./routes/profile"));
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 
 
+app.use(cors({
+  origin: "*",  // we'll update this after frontend deploy
+  methods: "GET,POST,PUT,PATCH,DELETE",
+  credentials: true
+}));
+
+app.listen(process.env.PORT || 5000, () => {
+  console.log("Server running on port", process.env.PORT || 5000);
+});
+
 // routes
 app.get("/", (req, res) => {
   res.json({ message: "PocketGrowth backend running 🚀" });
