@@ -22,12 +22,77 @@ export default function Transactions() {
     }
   };
 
+  const renderRow = (tx) => {
+    // normalize date
+    const when = new Date(tx.createdAt).toLocaleString();
+    const amt = tx.amount ?? tx.originalAmount ?? 0;
+
+    switch (tx.type) {
+      case "send":
+        return (
+          <div>
+            <strong>Sent</strong> — {formatINR(amt)} to {tx.toUserName || tx.toUserEmail}
+            <div style={{ color: "#94a3b8", fontSize: ".9rem" }}>{when}</div>
+          </div>
+        );
+      case "receive":
+        return (
+          <div>
+            <strong>Received</strong> — {formatINR(amt)} from {tx.fromUserName || "Unknown"}
+            <div style={{ color: "#94a3b8", fontSize: ".9rem" }}>{when}</div>
+          </div>
+        );
+      case "allowance":
+        return (
+          <div>
+            <strong>Allowance</strong> — {formatINR(amt)}
+            <div style={{ color: "#94a3b8", fontSize: ".9rem" }}>{when}</div>
+          </div>
+        );
+      case "lock_add":
+        return (
+          <div>
+            <strong>Locked Savings</strong> — {formatINR(amt)} added to locked savings
+            <div style={{ color: "#94a3b8", fontSize: ".9rem" }}>{when}</div>
+          </div>
+        );
+      case "unlock":
+        return (
+          <div>
+            <strong>Unlocked</strong> — {formatINR(amt)} {tx.note ? `for "${tx.note}"` : ""}
+            <div style={{ color: "#94a3b8", fontSize: ".9rem" }}>{when}</div>
+          </div>
+        );
+      case "invest":
+        return (
+          <div>
+            <strong>Invested</strong> — {formatINR(amt)} {tx.note ? `(${tx.note})` : ""}
+            <div style={{ color: "#94a3b8", fontSize: ".9rem" }}>{when}</div>
+          </div>
+        );
+      case "growth":
+        return (
+          <div>
+            <strong>Investment Growth</strong> — {formatINR(amt)}
+            <div style={{ color: "#94a3b8", fontSize: ".9rem" }}>{when}</div>
+          </div>
+        );
+      default:
+        return (
+          <div>
+            <strong>{tx.type}</strong> — {formatINR(amt)}
+            <div style={{ color: "#94a3b8", fontSize: ".9rem" }}>{when}</div>
+          </div>
+        );
+    }
+  };
+
   return (
     <div style={{ padding: "2rem", maxWidth: "900px", margin: "auto" }}>
-      <h2>📜 Transaction History</h2>
+      <h2>📜 Activity / Transactions</h2>
 
       {list.length === 0 ? (
-        <p style={{ marginTop: "1rem" }}>No transactions yet.</p>
+        <p style={{ marginTop: "1rem" }}>No activity yet.</p>
       ) : (
         <ul style={{ listStyle: "none", padding: 0, marginTop: "1rem" }}>
           {list.map((tx) => (
@@ -41,19 +106,7 @@ export default function Transactions() {
                 boxShadow: "0 1px 6px rgba(0,0,0,0.08)",
               }}
             >
-              <p>
-                <strong>{tx.type.toUpperCase()}</strong> — {formatINR(tx.amount)}
-              </p>
-
-              <p style={{ fontSize: "0.9rem", color: "#64748b" }}>
-                From: {tx.fromUserName || "—"}  
-                <br />
-                To: {tx.toUserName || "—"}
-              </p>
-
-              <p style={{ fontSize: "0.85rem", color: "#94a3b8" }}>
-                {new Date(tx.createdAt).toLocaleString()}
-              </p>
+              {renderRow(tx)}
             </li>
           ))}
         </ul>

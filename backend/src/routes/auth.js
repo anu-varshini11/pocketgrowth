@@ -124,4 +124,22 @@ router.get("/user/:id", async (req, res) => {
   }
 });
 
+// DELETE /api/auth/user/:id  -> delete user but keep transactions
+router.delete("/user/:id", async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const user = await User.findByIdAndDelete(userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // we intentionally DO NOT delete transactions so history stays intact
+    // You may also choose to anonymize transactions here if required.
+
+    res.json({ message: "User deleted" });
+  } catch (err) {
+    console.error("Delete user error:", err);
+    res.status(500).json({ error: "Failed to delete user" });
+  }
+});
+
+
 module.exports = router;

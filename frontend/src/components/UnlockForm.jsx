@@ -5,40 +5,35 @@ export default function UnlockForm({ user, refreshUserData }) {
   const [reason, setReason] = useState("");
   const [message, setMessage] = useState("");
 
-  const API_BASE =
-    import.meta.env.VITE_BACKEND_URL || "https://pocketgrowth.onrender.com";
+  const API_BASE = import.meta.env.VITE_BACKEND_URL || "https://pocketgrowth.onrender.com";
 
   const handleUnlock = async (e) => {
     e.preventDefault();
     setMessage("⏳ Processing...");
-
     try {
       const res = await fetch(`${API_BASE}/api/unlock`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id, amount, reason }),
       });
-
       const data = await res.json();
 
       if (res.ok) {
-        setMessage(data.message || "Unlocked");
+        setMessage(data.message);
         setAmount("");
         setReason("");
-
         if (refreshUserData) await refreshUserData();
       } else {
-        setMessage(`❌ ${data.error || "Unlock failed"}`);
+        setMessage(`❌ ${data.error}`);
       }
-    } catch (err) {
-      setMessage("❌ Network error");
+    } catch {
+      setMessage("❌ Unlock failed");
     }
   };
 
   return (
     <div style={{ marginTop: "2rem" }}>
       <h3>Unlock Savings</h3>
-
       <form onSubmit={handleUnlock}>
         <input
           type="number"
@@ -48,7 +43,6 @@ export default function UnlockForm({ user, refreshUserData }) {
           required
           style={{ padding: "8px", marginRight: "10px" }}
         />
-
         <input
           type="text"
           placeholder="Reason (optional)"
@@ -56,7 +50,6 @@ export default function UnlockForm({ user, refreshUserData }) {
           onChange={(e) => setReason(e.target.value)}
           style={{ padding: "8px", marginRight: "10px" }}
         />
-
         <button
           type="submit"
           style={{
@@ -71,7 +64,6 @@ export default function UnlockForm({ user, refreshUserData }) {
           Unlock
         </button>
       </form>
-
       <p>{message}</p>
     </div>
   );

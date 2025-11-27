@@ -1,11 +1,9 @@
 const express = require("express");
 const Investment = require("../models/Investment");
 const User = require("../models/User");
+const Transaction = require("../models/Transaction");
 
 const router = express.Router();
-
-// 📌 Auto growth rate — adjust if needed
-const DAILY_GROWTH_RATE = 0.002; // 0.2% per visit
 
 // POST /api/investments/add
 router.post("/add", async (req, res) => {
@@ -19,15 +17,16 @@ router.post("/add", async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: "User not found" });
 
+    // Ensure user has enough lockedBalance
     if ((user.lockedBalance || 0) < amt) {
-      return res.status(400).json({
-        error: "Insufficient locked balance. Invest from locked savings only.",
-      });
+      return res.status(400).json({ error: "Insufficient locked balance. Invest from locked savings only." });
     }
 
+    // Deduct from locked balance
     user.lockedBalance -= amt;
     await user.save();
 
+    // Create investment
     const newInvestment = new Investment({
       userId,
       type,
@@ -35,6 +34,17 @@ router.post("/add", async (req, res) => {
       returns: returns || 0,
     });
     await newInvestment.save();
+
+    // Add transaction record for investment
+    await Transaction.create({
+      type: "invest",
+      originalAmount: amt,
+      amount: amt,
+      fromUserId: user._id,
+      fromUserName: user.name,
+      note: `Invested ₹${amt} into ${type}`,
+      isProcessed: true,
+    });
 
     res.status(201).json({
       message: `✅ Investment of ₹${amt} created (from locked savings)`,
@@ -48,11 +58,10 @@ router.post("/add", async (req, res) => {
   }
 });
 
-// GET /api/investments/:userId (with AUTO-GROWTH)
+// GET /api/investments/:userId
 router.get("/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-
     const investments = await Investment.find({ userId }).sort({ createdAt: -1 });
 
     const totalInvested = investments.reduce((s, inv) => s + inv.amount, 0);
@@ -70,6 +79,5 @@ router.get("/:userId", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch investments" });
   }
 });
-
 
 module.exports = router;
