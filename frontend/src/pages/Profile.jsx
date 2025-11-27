@@ -24,7 +24,7 @@ export default function Profile() {
 
   const refreshUser = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/auth/user/${user.id}`);
+      const res = await fetch(`https://pocketgrowth.onrender.com/api/auth/user/${user.id}`);
       const data = await res.json();
       if (res.ok) {
         setUser(data);
@@ -39,7 +39,7 @@ export default function Profile() {
     e.preventDefault();
     setMsg("⏳ Updating profile...");
     try {
-      const res = await fetch("http://localhost:5000/api/profile/update", {
+      const res = await fetch("https://pocketgrowth.onrender.com/api/profile/update", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id, name, email }),
@@ -65,7 +65,7 @@ export default function Profile() {
     e.preventDefault();
     setMsg("⏳ Changing password...");
     try {
-      const res = await fetch("http://localhost:5000/api/profile/password", {
+      const res = await fetch("https://pocketgrowth.onrender.com/api/profile/password", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id, oldPassword, newPassword }),
@@ -87,7 +87,7 @@ export default function Profile() {
     e.preventDefault();
     setMsg("⏳ Updating auto-save %...");
     try {
-      const res = await fetch("http://localhost:5000/api/profile/savings", {
+      const res = await fetch("https://pocketgrowth.onrender.com/api/profile/savings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id, savingsPercent }),
@@ -110,7 +110,7 @@ export default function Profile() {
 
     setMsg("⏳ Deleting account...");
     try {
-      const res = await fetch("http://localhost:5000/api/profile/delete", {
+      const res = await fetch("https://pocketgrowth.onrender.com/api/profile/delete", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id }),

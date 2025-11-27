@@ -12,7 +12,7 @@ export default function SendMoney() {
     setMessage("⏳ Sending...");
 
     try {
-      const res = await fetch("http://localhost:5000/api/transactions/send", {
+      const res = await fetch("https://pocketgrowth.onrender.com/api/transactions/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -30,7 +30,7 @@ export default function SendMoney() {
         setAmount("");
 
         // refresh stored user data for sender
-        const refreshed = await fetch(`http://localhost:5000/api/auth/user/${user.id}`);
+        const refreshed = await fetch(`https://pocketgrowth.onrender.com/api/auth/user/${user.id}`);
         const updatedUser = await refreshed.json();
         if (refreshed.ok) localStorage.setItem("user", JSON.stringify(updatedUser));
       } else {

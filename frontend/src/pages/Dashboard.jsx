@@ -19,7 +19,7 @@ export default function Dashboard() {
   const refreshUserData = async () => {
     if (!user) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/auth/user/${user.id}`);
+      const res = await fetch(`https://pocketgrowth.onrender.com/api/auth/user/${user.id}`);
       const data = await res.json();
       if (res.ok) {
         localStorage.setItem("user", JSON.stringify(data));

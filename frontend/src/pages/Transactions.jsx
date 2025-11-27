@@ -12,7 +12,7 @@ export default function Transactions() {
 
   const fetchTransactions = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/transactions/user/${user.id}`);
+      const res = await fetch(`https://pocketgrowth.onrender.com/api/transactions/user/${user.id}`);
       const data = await res.json();
 
       if (res.ok) setList(data.transactions);

@@ -13,7 +13,7 @@ export default function ReceiveMoney() {
 
   const fetchPending = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/transactions/received/pending/${user.id}`);
+      const res = await fetch(`https://pocketgrowth.onrender.com/api/transactions/received/pending/${user.id}`);
       const data = await res.json();
       if (res.ok) setPending(data.transactions);
       else setMessage(data.error || "Failed to load pending");
@@ -29,7 +29,7 @@ export default function ReceiveMoney() {
       if (mode === "percentage") body.percentage = value;
       if (mode === "custom") body.customAmount = value;
 
-      const res = await fetch("http://localhost:5000/api/transactions/process", {
+      const res = await fetch("https://pocketgrowth.onrender.com/api/transactions/process", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -40,7 +40,7 @@ export default function ReceiveMoney() {
         setMessage(data.message);
         // refresh pending & update local user data
         await fetchPending();
-        const refreshed = await fetch(`http://localhost:5000/api/auth/user/${user.id}`);
+        const refreshed = await fetch(`https://pocketgrowth.onrender.com/api/auth/user/${user.id}`);
         const updatedUser = await refreshed.json();
         if (refreshed.ok) localStorage.setItem("user", JSON.stringify(updatedUser));
       } else {

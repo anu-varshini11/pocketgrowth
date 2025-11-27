@@ -35,7 +35,7 @@ export default function Investments() {
   const fetchInvestments = async () => {
     if (!user) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/investments/${user.id}`);
+      const res = await fetch(`https://pocketgrowth.onrender.com/investments/${user.id}`);
       const data = await res.json();
 
       if (res.ok) {
@@ -65,7 +65,7 @@ export default function Investments() {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/api/investments/add", {
+      const res = await fetch("https://pocketgrowth.onrender.com/api/investments/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -84,7 +84,7 @@ export default function Investments() {
         await fetchInvestments();
 
         // refresh user data and local state
-        const refreshed = await fetch(`http://localhost:5000/api/auth/user/${user.id}`);
+        const refreshed = await fetch(`https://pocketgrowth.onrender.com/api/auth/user/${user.id}`);
         const updatedUser = await refreshed.json();
         if (refreshed.ok) {
           localStorage.setItem("user", JSON.stringify(updatedUser));
