@@ -15,16 +15,15 @@ router.post("/", async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    if ((user.lockedBalance || 0) < numAmount)
+    if (user.lockedBalance < numAmount)
       return res.status(400).json({ error: "Not enough locked savings" });
 
-    // Deduct from locked savings and add to available balance
+    // move money
     user.lockedBalance -= numAmount;
-    user.availableBalance = (user.availableBalance || 0) + numAmount;
-
+    user.availableBalance += numAmount;
     await user.save();
 
-    // Create an unlock transaction with reason
+    // 🔥 LOG TRANSACTION
     await Transaction.create({
       type: "unlock",
       originalAmount: numAmount,
@@ -32,18 +31,18 @@ router.post("/", async (req, res) => {
       toUserId: user._id,
       toUserName: user.name,
       note: reason || "Unlocked savings",
-      isProcessed: true,
     });
 
     res.json({
-      message: `✅ Unlocked ₹${numAmount} for "${reason || "general use"}".`,
+      message: `Unlocked ₹${numAmount} for "${reason || "general use"}".`,
       availableBalance: user.availableBalance,
       lockedBalance: user.lockedBalance,
     });
   } catch (error) {
-    console.error("Unlock savings error:", error);
+    console.error("Unlock saving error:", error);
     res.status(500).json({ error: "Failed to unlock savings" });
   }
 });
+
 
 module.exports = router;

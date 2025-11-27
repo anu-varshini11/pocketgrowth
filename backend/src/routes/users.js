@@ -5,6 +5,7 @@ const Transaction = require("../models/Transaction"); // if you use transactions
 
 // POST /api/users/allowance
 // Body: { userId, amount, lockAmount }   (lockAmount optional; number)
+// POST /api/users/allowance
 router.post("/allowance", async (req, res) => {
   try {
     const { userId, amount, lockAmount } = req.body;
@@ -21,20 +22,31 @@ router.post("/allowance", async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    // Add to available, then move lock to lockedBalance
-    user.availableBalance = (user.availableBalance || 0) + amt;
+    // Update balances
+    user.availableBalance += amt;
+    let note = `Allowance added: ₹${amt}`;
 
+    // If locking part
     if (lock > 0) {
-      // move 'lock' from available to lockedBalance
       user.availableBalance -= lock;
-      user.lockedBalance = (user.lockedBalance || 0) + lock;
+      user.lockedBalance += lock;
+
+      note = `Allowance: ₹${amt}, Locked: ₹${lock}`;
     }
 
     await user.save();
 
-    // optional: log transactions for allowance and lock
-    // await Transaction.create({ type: "allowance", amount: amt, toUserId: user._id, toUserName: user.name });
-    // if (lock > 0) await Transaction.create({ type: "lock", amount: lock, toUserId: user._id, toUserName: user.name });
+    // 🔥 LOG TRANSACTION
+    await Transaction.create({
+      type: lock > 0 ? "lock_add" : "allowance",
+      originalAmount: amt,
+      amount: lock > 0 ? lock : amt,
+      fromUserId: user._id,
+      fromUserName: user.name,
+      toUserId: user._id,
+      toUserName: user.name,
+      note,
+    });
 
     res.json({
       message: "Allowance added",
@@ -46,5 +58,6 @@ router.post("/allowance", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 module.exports = router;

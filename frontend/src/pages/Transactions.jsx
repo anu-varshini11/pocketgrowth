@@ -12,7 +12,9 @@ export default function Transactions() {
 
   const fetchTransactions = async () => {
     try {
-      const res = await fetch(`https://pocketgrowth.onrender.com/api/transactions/user/${user.id}`);
+      const res = await fetch(
+        `https://pocketgrowth.onrender.com/api/transactions/user/${user.id}`
+      );
       const data = await res.json();
 
       if (res.ok) setList(data.transactions);
@@ -22,97 +24,91 @@ export default function Transactions() {
     }
   };
 
-  const renderRow = (tx) => {
-    // normalize date
-    const when = new Date(tx.createdAt).toLocaleString();
-    const amt = tx.amount ?? tx.originalAmount ?? 0;
+  const colorMap = {
+    send: "#ef4444",
+    receive: "#22c55e",
+    allowance: "#0ea5e9",
+    lock_add: "#8b5cf6",
+    unlock: "#fb923c",
+    invest: "#facc15",
+    growth: "#22c55e",
+  };
 
+  const labelMap = {
+    send: "Sent Money",
+    receive: "Received Money",
+    allowance: "Allowance Added",
+    lock_add: "Locked Savings Added",
+    unlock: "Unlocked Savings",
+    invest: "Investment Made",
+    growth: "Investment Growth",
+  };
+
+  const description = (tx) => {
     switch (tx.type) {
       case "send":
-        return (
-          <div>
-            <strong>Sent</strong> — {formatINR(amt)} to {tx.toUserName || tx.toUserEmail}
-            <div style={{ color: "#94a3b8", fontSize: ".9rem" }}>{when}</div>
-          </div>
-        );
+        return `Sent ${formatINR(tx.amount)} to ${tx.toUserName}`;
       case "receive":
-        return (
-          <div>
-            <strong>Received</strong> — {formatINR(amt)} from {tx.fromUserName || "Unknown"}
-            <div style={{ color: "#94a3b8", fontSize: ".9rem" }}>{when}</div>
-          </div>
-        );
+        return `Received ${formatINR(tx.amount)} from ${tx.fromUserName}`;
       case "allowance":
-        return (
-          <div>
-            <strong>Allowance</strong> — {formatINR(amt)}
-            <div style={{ color: "#94a3b8", fontSize: ".9rem" }}>{when}</div>
-          </div>
-        );
+        return `Added allowance of ${formatINR(tx.amount)}`;
       case "lock_add":
-        return (
-          <div>
-            <strong>Locked Savings</strong> — {formatINR(amt)} added to locked savings
-            <div style={{ color: "#94a3b8", fontSize: ".9rem" }}>{when}</div>
-          </div>
-        );
+        return `Locked ${formatINR(tx.amount)} from allowance`;
       case "unlock":
-        return (
-          <div>
-            <strong>Unlocked</strong> — {formatINR(amt)} {tx.note ? `for "${tx.note}"` : ""}
-            <div style={{ color: "#94a3b8", fontSize: ".9rem" }}>{when}</div>
-          </div>
-        );
+        return `Unlocked ${formatINR(tx.amount)} — ${tx.note || "No reason"}`;
       case "invest":
-        return (
-          <div>
-            <strong>Invested</strong> — {formatINR(amt)} {tx.note ? `(${tx.note})` : ""}
-            <div style={{ color: "#94a3b8", fontSize: ".9rem" }}>{when}</div>
-          </div>
-        );
+        return `Invested ${formatINR(tx.amount)} (${tx.note || tx.type})`;
       case "growth":
-        return (
-          <div>
-            <strong>Investment Growth</strong> — {formatINR(amt)}
-            <div style={{ color: "#94a3b8", fontSize: ".9rem" }}>{when}</div>
-          </div>
-        );
+        return `Investment Growth — +${formatINR(tx.amount)}`;
       default:
-        return (
-          <div>
-            <strong>{tx.type}</strong> — {formatINR(amt)}
-            <div style={{ color: "#94a3b8", fontSize: ".9rem" }}>{when}</div>
-          </div>
-        );
+        return tx.type;
     }
   };
 
   return (
     <div style={{ padding: "2rem", maxWidth: "900px", margin: "auto" }}>
-      <h2>📜 Activity / Transactions</h2>
+      <h2 style={{ marginBottom: "1rem" }}>📜 Transaction History</h2>
 
       {list.length === 0 ? (
-        <p style={{ marginTop: "1rem" }}>No activity yet.</p>
+        <p>No transactions yet.</p>
       ) : (
-        <ul style={{ listStyle: "none", padding: 0, marginTop: "1rem" }}>
+        <ul style={{ listStyle: "none", padding: 0 }}>
           {list.map((tx) => (
             <li
               key={tx._id}
               style={{
-                marginBottom: "12px",
                 background: "white",
                 padding: "1rem",
                 borderRadius: "10px",
-                boxShadow: "0 1px 6px rgba(0,0,0,0.08)",
+                marginBottom: "12px",
+                border: "1px solid #e2e8f0",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
               }}
             >
-              {renderRow(tx)}
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <strong
+                  style={{
+                    color: colorMap[tx.type],
+                    fontSize: "1.1rem",
+                  }}
+                >
+                  {labelMap[tx.type]}
+                </strong>
+
+                <span style={{ color: "#64748b" }}>
+                  {new Date(tx.createdAt).toLocaleString()}
+                </span>
+              </div>
+
+              <p style={{ marginTop: "8px", fontSize: "1rem" }}>
+                {description(tx)}
+              </p>
             </li>
           ))}
         </ul>
       )}
 
-      <p style={{ marginTop: "10px", color: "#64748b" }}>{message}</p>
+      <p style={{ marginTop: "8px", color: "#64748b" }}>{message}</p>
     </div>
   );
 }
