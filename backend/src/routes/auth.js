@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const Investment = require("../models/Investment");
 require("dotenv").config();
 
 const router = express.Router();
@@ -53,6 +54,7 @@ router.post("/signup", async (req, res) => {
 
 // ✅ POST /api/auth/login
 // POST /api/auth/login
+// POST /api/auth/login
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -63,14 +65,19 @@ router.post("/login", async (req, res) => {
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) return res.status(400).json({ error: "Invalid password" });
 
-    // Auto-growth only on login
-    const investments = await Investment.find({ userId: user._id });
-    const DAILY_GROWTH_RATE = 0.002;
+    // Auto-growth only once per login
+    try {
+      const investments = await Investment.find({ userId: user._id });
+      const DAILY_GROWTH_RATE = 0.002; // 0.2%
 
-    for (let inv of investments) {
-      const growth = inv.amount * DAILY_GROWTH_RATE;
-      inv.returns += growth;
-      await inv.save();
+      for (let inv of investments) {
+        const growth = inv.amount * DAILY_GROWTH_RATE;
+        inv.returns += growth;
+        await inv.save();
+      }
+    } catch (err) {
+      console.error("Growth error:", err);
+      // DO NOT FAIL LOGIN if growth fails
     }
 
     const token = jwt.sign(
@@ -91,10 +98,11 @@ router.post("/login", async (req, res) => {
       token,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Login error:", error);
     res.status(500).json({ error: "Login failed" });
   }
 });
+
 
 
 // ✅ GET /api/auth/user/:id – refresh dashboard balances
